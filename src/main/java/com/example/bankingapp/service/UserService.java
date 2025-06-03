@@ -2,15 +2,20 @@ package com.example.bankingapp.service;
 
 import com.example.bankingapp.dto.CreateUser;
 import com.example.bankingapp.dto.CustomerResponseDto;
+
 import com.example.bankingapp.dto.UserResponseDto;
+import com.example.bankingapp.entity.Customer;
 import com.example.bankingapp.entity.User;
 import com.example.bankingapp.entity.UserRole;
 import com.example.bankingapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class UserService {
@@ -30,6 +35,19 @@ public class UserService {
 
 
     }
+
+    public Page<UserResponseDto> getAllUsers(Pageable pageable){
+        return userRepository.findAll(pageable).map(this::toDto);
+
+    }
+    public UserResponseDto getUserById(Long id){
+        User user= userRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User  not found with id " + id));
+
+
+        return toDto(user);
+
+    }
     private UserResponseDto toDto(User user ){
         UserResponseDto dto=new UserResponseDto();
         dto.setId(user.getId());
@@ -37,17 +55,16 @@ public class UserService {
         dto.setEmail(user.getEmail());
         List<CustomerResponseDto> customerDtos= new ArrayList<>();
         if (user.getCustomers() != null) {
-            for (Transaction transaction : customer.getTransactions()) {
-                TransactionResponseDto txDto = new TransactionResponseDto();
-                txDto.setTransactionRef(transaction.getTransactionRef());
-                txDto.setStatus(transaction.getStatus());
-                txDto.setAmount(transaction.getAmount());
-                txDto.setCustomerId(customer.getId());
-                txDto.setName(customer.getName());
-                transactionDtos.add(txDto);
+            for (Customer customer : user.getCustomers()) {
+                CustomerResponseDto customerResponseDto = new CustomerResponseDto();
+
+                customerResponseDto.setAccountNumber(customer.getAccountNumber());
+                customerResponseDto.setBalance(customer.getBalance());
+
+
             }
         }
-        dto.setTransactions(transactionDtos);
-        return  dto;
+       return  dto;
+
     }
 }
